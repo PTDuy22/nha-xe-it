@@ -41,6 +41,21 @@ def get_db():
     cur.close()
     return conn
 
+# Trang web: Vercel thường tự phục vụ public/index.html; route này là dự phòng
+from fastapi.responses import FileResponse, PlainTextResponse
+_BASE = os.path.dirname(os.path.abspath(__file__))
+
+@app.get("/", include_in_schema=False)
+def serve_home():
+    for p in (os.path.join(_BASE, "public", "index.html"), os.path.join(_BASE, "index.html")):
+        if os.path.exists(p):
+            return FileResponse(p)
+    return PlainTextResponse("Không tìm thấy public/index.html trong bản deploy", status_code=404)
+
+@app.get("/api/health", include_in_schema=False)
+def health():
+    return {"ok": True, "has_db_url": bool(DATABASE_URL), "has_admin_key": bool(ADMIN_KEY), "has_device_key": bool(DEVICE_KEY)}
+
 # Models
 class ResidentRegisterRequest(BaseModel):
     full_name: str
