@@ -4,59 +4,86 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hệ Thống Quản Lý Bãi Giữ Xe Thông Minh - Chung Cư IoT</title>
-    <!-- Google Fonts: Be Vietnam Pro chuẩn tiếng Việt -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- SweetAlert2 (Thông báo popup đẹp, không dính dòng chữ localhost:8080) -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         :root {
-            --primary-color: #2563eb;
-            --sidebar-bg: #1e293b;
-        }
-        * {
-            font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+            --primary-color: #3b82f6;
+            --sidebar-bg: #0f172a;
+            --sidebar-text: #cbd5e1;
+            --sidebar-active-bg: #1e3a5f;
+            --sidebar-hover-bg: #1e293b;
         }
         body {
+            font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             background-color: #f1f5f9;
+        }
+        /* Fix: đảm bảo font Be Vietnam Pro không ảnh hưởng tới icon */
+        .sidebar-icon {
+            font-style: normal;
+            font-size: 1rem;
+            line-height: 1;
+            flex-shrink: 0;
         }
         .sidebar {
             width: 260px;
             height: 100vh;
             position: fixed;
             background: var(--sidebar-bg);
-            color: #fff;
+            color: var(--sidebar-text);
             padding-top: 20px;
+            border-right: 1px solid #1e293b;
+        }
+        .sidebar .brand-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #f8fafc;
+            letter-spacing: 0.5px;
+        }
+        .sidebar .brand-sub {
+            color: #64748b;
+            font-size: 0.8rem;
         }
         .sidebar .nav-link {
-            color: #94a3b8;
-            padding: 12px 20px;
+            color: var(--sidebar-text);
+            padding: 11px 20px;
             font-weight: 500;
+            font-size: 0.925rem;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             cursor: pointer;
+            border-left: 3px solid transparent;
+            transition: all 0.15s ease;
+            border-radius: 0;
         }
-        .sidebar .nav-link.active, .sidebar .nav-link:hover {
+        .sidebar .nav-link:hover {
+            color: #f1f5f9;
+            background: var(--sidebar-hover-bg);
+            border-left-color: #475569;
+        }
+        .sidebar .nav-link.active {
             color: #fff;
-            background: #334155;
-            border-left: 4px solid var(--primary-color);
+            background: var(--sidebar-active-bg);
+            border-left-color: var(--primary-color);
+            font-weight: 600;
         }
         .content {
             margin-left: 260px;
-            padding: 30px;
+            padding: 32px;
         }
         .stat-card {
             border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            border: none;
-            transition: transform 0.2s;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+            border: 1px solid #e2e8f0;
+            transition: transform 0.18s, box-shadow 0.18s;
         }
         .stat-card:hover {
             transform: translateY(-3px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
         }
         .badge-allowed {
             background-color: #10b981;
@@ -68,36 +95,58 @@
         }
         .card-custom {
             border-radius: 12px;
-            border: none;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+        }
+        .page-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .form-label {
+            font-weight: 500;
+            color: #374151;
+        }
+        .section-heading {
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: #64748b;
+            padding: 8px 20px 4px;
+            margin-top: 8px;
         }
     </style>
 </head>
 <body>
     <div class="sidebar">
-        <div class="px-3 mb-4">
-            <h5 class="fw-bold text-white"><i class="fa-solid fa-square-parking text-primary me-2"></i>PARKING AIOT</h5>
-            <small class="text-muted">Quản lý bãi xe chung cư</small>
+        <div class="px-4 mb-3">
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span style="font-size:1.3rem;">🅿️</span>
+                <span class="brand-title">PARKING AIOT</span>
+            </div>
+            <div class="brand-sub">Quản lý bãi xe chung cư</div>
         </div>
+        <div class="section-heading">Menu</div>
         <ul class="nav flex-column">
             <li class="nav-item">
                 <a class="nav-link active" id="nav-dashboard" onclick="showTab('dashboard')">
-                    <i class="fa-solid fa-chart-pie"></i> Bảng điều khiển
+                    <span class="sidebar-icon">📊</span> Bảng điều khiển
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link" id="nav-register" onclick="showTab('register')">
-                    <i class="fa-solid fa-id-card-clip"></i> Đăng ký giữ xe mới
+                    <span class="sidebar-icon">📋</span> Đăng ký giữ xe mới
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link" id="nav-residents" onclick="showTab('residents')">
-                    <i class="fa-solid fa-users"></i> Cư dân & Xe thẻ
+                    <span class="sidebar-icon">👥</span> Cư dân &amp; Xe thẻ
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link" id="nav-logs" onclick="showTab('logs')">
-                    <i class="fa-solid fa-clock-rotate-left"></i> Lịch sử Vào / Ra
+                    <span class="sidebar-icon">🕐</span> Lịch sử Vào / Ra
                 </a>
             </li>
         </ul>
@@ -106,7 +155,7 @@
     <div class="content">
         <!-- TAB 1: DASHBOARD -->
         <div id="tab-dashboard">
-            <h4 class="fw-bold mb-4">Tổng Quan Bãi Xe Chung Cư</h4>
+            <h4 class="page-title mb-4">Tổng Quan Bãi Xe Chung Cư</h4>
             <div class="row g-3 mb-4">
                 <div class="col-md-3">
                     <div class="card stat-card bg-white p-3">
@@ -115,7 +164,7 @@
                                 <small class="text-muted">Tổng Cư Dân</small>
                                 <h3 class="fw-bold mt-1 text-primary" id="stat-residents">0</h3>
                             </div>
-                            <i class="fa-solid fa-users fa-2x text-primary opacity-50"></i>
+                            <span style="font-size:2rem;opacity:0.4">👤</span>
                         </div>
                     </div>
                 </div>
@@ -126,7 +175,7 @@
                                 <small class="text-muted">Thẻ RFID Hoạt Động</small>
                                 <h3 class="fw-bold mt-1 text-success" id="stat-cards">0</h3>
                             </div>
-                            <i class="fa-solid fa-id-card fa-2x text-success opacity-50"></i>
+                            <span style="font-size:2rem;opacity:0.4">💳</span>
                         </div>
                     </div>
                 </div>
@@ -137,7 +186,7 @@
                                 <small class="text-muted">Xe Đang Trong Bãi</small>
                                 <h3 class="fw-bold mt-1 text-warning" id="stat-inside">0</h3>
                             </div>
-                            <i class="fa-solid fa-motorcycle fa-2x text-warning opacity-50"></i>
+                            <span style="font-size:2rem;opacity:0.4">🏍️</span>
                         </div>
                     </div>
                 </div>
@@ -148,7 +197,7 @@
                                 <small class="text-muted">Lượt Vào/Ra Hôm Nay</small>
                                 <h3 class="fw-bold mt-1 text-danger" id="stat-events">0</h3>
                             </div>
-                            <i class="fa-solid fa-arrow-right-arrow-left fa-2x text-danger opacity-50"></i>
+                            <span style="font-size:2rem;opacity:0.4">🔁</span>
                         </div>
                     </div>
                 </div>
@@ -179,12 +228,12 @@
 
         <!-- TAB 2: ĐĂNG KÝ GIỮ XE MỚI -->
         <div id="tab-register" style="display: none;">
-            <h4 class="fw-bold mb-4">Đăng Ký Giữ Xe Cho Cư Dân Mới</h4>
+            <h4 class="page-title mb-4">Đăng Ký Giữ Xe Cho Cư Dân Mới</h4>
             <div class="row">
                 <div class="col-lg-8">
                     <div class="card card-custom p-4 bg-white">
                         <form id="form-register-parking" onsubmit="handleRegisterParking(event)">
-                            <h6 class="fw-bold text-primary mb-3"><i class="fa-solid fa-user me-2"></i>1. Thông tin Cư dân</h6>
+                            <h6 class="fw-bold text-primary mb-3">1. Thông tin Cư dân</h6>
                             <div class="row g-3 mb-4">
                                 <div class="col-md-6">
                                     <label class="form-label">Họ và tên <span class="text-danger">*</span></label>
@@ -200,20 +249,11 @@
                                 </div>
                             </div>
 
-                            <h6 class="fw-bold text-success mb-3"><i class="fa-solid fa-motorcycle me-2"></i>2. Thông tin Thẻ RFID & Phương tiện</h6>
+                            <h6 class="fw-bold text-success mb-3">2. Thông tin Thẻ RFID &amp; Phương tiện</h6>
                             <div class="row g-3 mb-4">
                                 <div class="col-md-6">
-                                    <label class="form-label d-flex justify-content-between align-items-center">
-                                        <span>Mã UID Thẻ RFID <span class="text-danger">*</span></span>
-                                        <button type="button" class="btn btn-sm btn-outline-primary py-0" onclick="fetchScannedCard()">
-                                            <i class="fa-solid fa-arrows-rotate me-1"></i>Lấy mã vừa quẹt
-                                        </button>
-                                    </label>
-                                    <div class="input-group">
-                                        <input type="text" class="form-control text-uppercase fw-bold text-primary" id="reg-uid" placeholder="Quẹt thẻ hoặc nhập VD: 83A12BC4" required>
-                                        <span class="input-group-text"><i class="fa-solid fa-id-card"></i></span>
-                                    </div>
-                                    <small class="text-muted" id="scan-hint">💡 Hãy quẹt thẻ lên đầu đọc, mã sẽ tự động điền vào đây</small>
+                                    <label class="form-label">Mã UID Thẻ RFID <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control text-uppercase fw-bold" id="reg-uid" placeholder="Nhập mã UID thẻ, VD: 83A12BC4" required>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Biển số xe đăng ký <span class="text-danger">*</span></label>
@@ -230,20 +270,9 @@
                             </div>
 
                             <button type="submit" class="btn btn-primary px-4 py-2" id="btn-submit-reg">
-                                <i class="fa-solid fa-check me-2"></i>Hoàn tất đăng ký giữ xe
+                                ✓ Hoàn tất đăng ký giữ xe
                             </button>
                         </form>
-                    </div>
-                </div>
-
-                <div class="col-lg-4">
-                    <div class="card card-custom p-4 bg-white">
-                        <h6 class="fw-bold mb-3"><i class="fa-solid fa-circle-info text-primary me-2"></i>Quy trình cấp phát</h6>
-                        <ul class="text-muted small ps-3">
-                            <li class="mb-2">Mỗi cư dân được cấp 1 thẻ RFID kèm biển số đăng ký hợp lệ.</li>
-                            <li class="mb-2">Khi xe đến cổng, hệ thống đối soát thẻ RFID với biển số camera chụp được.</li>
-                            <li class="mb-2">Nếu biển số khớp $\ge$ 85%, Barrier tự động mở cho xe vào/ra.</li>
-                        </ul>
                     </div>
                 </div>
             </div>
@@ -252,9 +281,9 @@
         <!-- TAB 3: RESIDENTS -->
         <div id="tab-residents" style="display: none;">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h4 class="fw-bold">Danh Sách Cư Dân & Xe Thẻ</h4>
+                <h4 class="page-title">Danh Sách Cư Dân &amp; Xe Thẻ</h4>
                 <button class="btn btn-primary" onclick="showTab('register')">
-                    <i class="fa-solid fa-plus me-2"></i>Đăng Ký Thẻ Xe Mới
+                    + Đăng Ký Thẻ Xe Mới
                 </button>
             </div>
             <div class="card card-custom p-4 bg-white">
@@ -282,7 +311,7 @@
 
         <!-- TAB 4: LOGS -->
         <div id="tab-logs" style="display: none;">
-            <h4 class="fw-bold mb-4">Nhật Ký Xe Ra Vào</h4>
+            <h4 class="page-title mb-4">Nhật Ký Xe Ra Vào</h4>
             <div class="card card-custom p-4 bg-white">
                 <div class="table-responsive">
                     <table class="table table-hover align-middle">
@@ -311,100 +340,38 @@
     <script>
         const API_BASE = "/api";
 
-        // Gửi kèm ADMIN KEY cho mọi request (nhập 1 lần, lưu trong sessionStorage)
-        function getAdminKey() {
-            let k = sessionStorage.getItem("ADMIN_KEY");
-            if (!k) {
-                k = prompt("Nhập ADMIN KEY để vào hệ thống:") || "";
-                sessionStorage.setItem("ADMIN_KEY", k);
-            }
-            return k;
-        }
-        async function apiFetch(url, opts = {}) {
-            opts.headers = Object.assign({}, opts.headers, { "X-Admin-Key": getAdminKey() });
-            const res = await fetch(url, opts);
-            if (res.status === 401) { sessionStorage.removeItem("ADMIN_KEY"); }
-            return res;
-        }
-
         function showTab(tab) {
             document.querySelectorAll(".sidebar .nav-link").forEach(el => el.classList.remove("active"));
-            
+
             const navMap = {
                 'dashboard': 'nav-dashboard',
-                'register': 'nav-register',
+                'register':  'nav-register',
                 'residents': 'nav-residents',
-                'logs': 'nav-logs'
+                'logs':      'nav-logs'
             };
             if (navMap[tab]) document.getElementById(navMap[tab]).classList.add("active");
 
             document.getElementById("tab-dashboard").style.display = tab === 'dashboard' ? 'block' : 'none';
-            document.getElementById("tab-register").style.display = tab === 'register' ? 'block' : 'none';
+            document.getElementById("tab-register").style.display  = tab === 'register'  ? 'block' : 'none';
             document.getElementById("tab-residents").style.display = tab === 'residents' ? 'block' : 'none';
-            document.getElementById("tab-logs").style.display = tab === 'logs' ? 'block' : 'none';
+            document.getElementById("tab-logs").style.display      = tab === 'logs'      ? 'block' : 'none';
 
             if (tab === 'dashboard') loadDashboard();
             if (tab === 'residents') loadResidents();
             if (tab === 'logs') loadLogs();
-            if (tab === 'register') startAutoDetectCard();
-            else stopAutoDetectCard();
-        }
-
-        let scanPollTimer = null;
-        let lastDetectedUid = "";
-
-        // Tự động lắng nghe khi người quản lý quẹt thẻ trên đầu đọc
-        function startAutoDetectCard() {
-            stopAutoDetectCard();
-            scanPollTimer = setInterval(async () => {
-                try {
-                    const res = await apiFetch(`${API_BASE}/latest-scanned-card`);
-                    const data = await res.json();
-                    if (data.uid && data.uid !== lastDetectedUid) {
-                        lastDetectedUid = data.uid;
-                        const uidInput = document.getElementById("reg-uid");
-                        uidInput.value = data.uid;
-                        document.getElementById("scan-hint").innerHTML = `<span class="text-success fw-bold">✓ Đã nhận diện thẻ: ${data.uid}</span>`;
-                        // Hiệu ứng nhấp nháy xanh nhẹ để người quản lý biết đã bắt được thẻ
-                        uidInput.classList.add("is-valid");
-                    }
-                } catch (e) {}
-            }, 1000);
-        }
-
-        function stopAutoDetectCard() {
-            if (scanPollTimer) {
-                clearInterval(scanPollTimer);
-                scanPollTimer = null;
-            }
-        }
-
-        async function fetchScannedCard() {
-            try {
-                const res = await apiFetch(`${API_BASE}/latest-scanned-card`);
-                const data = await res.json();
-                if (data.uid) {
-                    document.getElementById("reg-uid").value = data.uid;
-                    document.getElementById("scan-hint").innerHTML = `<span class="text-success fw-bold">✓ Đã nhận diện thẻ: ${data.uid}</span>`;
-                } else {
-                    alert("Chưa có thẻ nào được quẹt gần đây. Hãy quẹt thẻ lên đầu đọc!");
-                }
-            } catch (err) {
-                alert("Lỗi kết nối: " + err.message);
-            }
         }
 
         async function loadDashboard() {
             try {
-                const res = await apiFetch(`${API_BASE}/dashboard/stats`);
+                const res  = await fetch(`${API_BASE}/dashboard/stats`);
                 const data = await res.json();
                 document.getElementById("stat-residents").innerText = data.total_residents;
-                document.getElementById("stat-cards").innerText = data.active_cards;
-                document.getElementById("stat-inside").innerText = data.vehicles_inside;
-                document.getElementById("stat-events").innerText = data.today_events;
+                document.getElementById("stat-cards").innerText     = data.active_cards;
+                document.getElementById("stat-inside").innerText    = data.vehicles_inside;
+                document.getElementById("stat-events").innerText    = data.today_events;
 
                 const tbody = document.getElementById("dashboard-recent-logs");
-                if (data.recent_logs.length === 0) {
+                if (!data.recent_logs || data.recent_logs.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Chưa có lượt xe nào</td></tr>';
                     return;
                 }
@@ -426,7 +393,7 @@
 
         async function loadResidents() {
             try {
-                const res = await apiFetch(`${API_BASE}/residents`);
+                const res  = await fetch(`${API_BASE}/residents`);
                 const list = await res.json();
                 const tbody = document.getElementById("residents-table-body");
                 if (list.length === 0) {
@@ -442,11 +409,13 @@
                         <td><span class="badge bg-dark">${r.plate_number || 'Chưa ĐK'}</span></td>
                         <td>${r.vehicle_type || '-'}</td>
                         <td>
-                            ${r.is_inside ? '<span class="badge bg-warning text-dark">Đang trong bãi</span>' : '<span class="badge bg-light text-secondary border">Bên ngoài</span>'}
+                            ${r.is_inside
+                                ? '<span class="badge bg-warning text-dark">Đang trong bãi</span>'
+                                : '<span class="badge bg-light text-secondary border">Bên ngoài</span>'}
                         </td>
                         <td class="text-center">
-                            <button class="btn btn-outline-danger btn-sm" onclick="cancelRegistration(${r.user_id}, '${r.full_name}')" title="Hủy đăng ký giữ xe">
-                                <i class="fa-solid fa-trash-can me-1"></i>Hủy ĐK
+                            <button class="btn btn-outline-danger btn-sm" onclick="cancelRegistration(${r.user_id}, '${r.full_name}')">
+                                🗑 Hủy ĐK
                             </button>
                         </td>
                     </tr>
@@ -458,7 +427,7 @@
 
         async function loadLogs() {
             try {
-                const res = await apiFetch(`${API_BASE}/logs`);
+                const res  = await fetch(`${API_BASE}/logs`);
                 const logs = await res.json();
                 const tbody = document.getElementById("logs-table-body");
                 if (logs.length === 0) {
@@ -483,7 +452,6 @@
             }
         }
 
-        // Xử lý gửi form Đăng Ký Giữ Xe Mới
         async function handleRegisterParking(e) {
             e.preventDefault();
             const btn = document.getElementById("btn-submit-reg");
@@ -491,85 +459,62 @@
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang xử lý...';
 
             const payload = {
-                full_name: document.getElementById("reg-fullname").value.trim(),
-                apartment: document.getElementById("reg-apartment").value.trim(),
-                phone: document.getElementById("reg-phone").value.trim(),
-                uid_rfid: document.getElementById("reg-uid").value.trim(),
+                full_name:    document.getElementById("reg-fullname").value.trim(),
+                apartment:    document.getElementById("reg-apartment").value.trim(),
+                phone:        document.getElementById("reg-phone").value.trim(),
+                uid_rfid:     document.getElementById("reg-uid").value.trim(),
                 plate_number: document.getElementById("reg-plate").value.trim(),
                 vehicle_type: document.getElementById("reg-vehicletype").value
             };
 
             try {
-                const res = await apiFetch(`${API_BASE}/register-parking`, {
-                    method: 'POST',
+                const res  = await fetch(`${API_BASE}/register-parking`, {
+                    method:  'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body:    JSON.stringify(payload)
                 });
                 const data = await res.json();
 
                 if (!res.ok) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Đăng ký thất bại',
-                        text: data.detail || 'Không thể đăng ký!',
-                        confirmButtonColor: '#2563eb'
-                    });
+                    Swal.fire({ icon: 'error', title: 'Đăng ký thất bại', text: data.detail || 'Không thể đăng ký!', confirmButtonColor: '#3b82f6' });
                 } else {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Thành công!',
-                        text: 'Chúc mừng! Đăng ký giữ xe thành công!',
-                        showConfirmButton: false,
-                        timer: 1500
-                    });
+                    Swal.fire({ icon: 'success', title: 'Thành công!', text: 'Đăng ký giữ xe thành công!', showConfirmButton: false, timer: 1500 });
                     document.getElementById("form-register-parking").reset();
                     setTimeout(() => showTab('residents'), 1500);
                 }
             } catch (err) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Lỗi kết nối',
-                    text: err.message,
-                    confirmButtonColor: '#2563eb'
-                });
+                Swal.fire({ icon: 'error', title: 'Lỗi kết nối', text: err.message, confirmButtonColor: '#3b82f6' });
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-check me-2"></i>Hoàn tất đăng ký giữ xe';
+                btn.innerHTML = '✓ Hoàn tất đăng ký giữ xe';
             }
         }
 
-        // Hủy đăng ký giữ xe của cư dân: bấm là hủy ngay, không hiện popup hỏi
         async function cancelRegistration(userId, fullName) {
+            const confirm = await Swal.fire({
+                icon: 'warning',
+                title: 'Xác nhận hủy đăng ký?',
+                text: `Hủy đăng ký giữ xe và thu hồi thẻ của cư dân ${fullName}?`,
+                showCancelButton: true,
+                confirmButtonText: 'Hủy đăng ký',
+                cancelButtonText: 'Giữ lại',
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#64748b'
+            });
+            if (!confirm.isConfirmed) return;
+
             try {
-                const res = await apiFetch(`${API_BASE}/residents/${userId}`, {
-                    method: 'DELETE'
-                });
+                const res  = await fetch(`${API_BASE}/residents/${userId}`, { method: 'DELETE' });
                 const data = await res.json();
                 if (!res.ok) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Lỗi',
-                        text: data.detail || 'Không thể hủy đăng ký!',
-                        confirmButtonColor: '#2563eb'
-                    });
+                    Swal.fire({ icon: 'error', title: 'Lỗi', text: data.detail || 'Không thể hủy đăng ký!', confirmButtonColor: '#3b82f6' });
                 } else {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Đã hủy đăng ký',
-                        text: `Đã thu hồi thẻ xe của cư dân ${fullName}`,
-                        showConfirmButton: false,
-                        timer: 1200
-                    });
-                    loadResidents(); // Tải lại danh sách ngay lập tức
-                    loadDashboard(); // Cập nhật lại số liệu thống kê
+                    Swal.fire({ icon: 'success', title: 'Đã hủy đăng ký', text: `Đã thu hồi thẻ xe của cư dân ${fullName}`, showConfirmButton: false, timer: 1200 });
+                    loadResidents();
+                    loadDashboard();
                 }
             } catch (err) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Lỗi kết nối',
-                    text: err.message,
-                    confirmButtonColor: '#2563eb'
-                });
+                Swal.fire({ icon: 'error', title: 'Lỗi kết nối', text: err.message, confirmButtonColor: '#3b82f6' });
             }
         }
 
