@@ -1,5 +1,6 @@
 import os
 import time
+import math
 import difflib
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -64,6 +65,7 @@ class ResidentRegisterRequest(BaseModel):
     uid_rfid: str
     plate_number: str
     vehicle_type: str = "xe máy"
+    face_embeddings: Optional[List[List[float]]] = None  # tối đa 5 vector, mỗi vector 512 số
 
 class GateEventRequest(BaseModel):
     event_id: str
@@ -166,6 +168,14 @@ def get_latest_scanned_card():
 # ĐĂNG KÝ GIỮ XE MỚI (Cư dân + Cấp thẻ RFID + Đăng ký biển số xe 1 bước)
 @app.post("/api/register-parking", dependencies=[Depends(require_admin)])
 def register_parking(data: ResidentRegisterRequest):
+    # Vector khuôn mặt do tool host trên máy quản lý tính sẵn (không gửi ảnh lên server)
+    faces = data.face_embeddings or []
+    if len(faces) > 5:
+        raise HTTPException(status_code=400, detail="Chỉ được gửi tối đa 5 vector khuôn mặt!")
+    for v in faces:
+        if len(v) != 512 or not all(math.isfinite(x) for x in v):
+            raise HTTPException(status_code=400, detail="Mỗi vector khuôn mặt phải có đúng 512 số hợp lệ!")
+
     conn = get_db()
     cur = conn.cursor()
     try:
@@ -200,10 +210,17 @@ def register_parking(data: ResidentRegisterRequest):
         """, (user_id, card_id, data.plate_number.strip(), data.vehicle_type))
         vehicle_id = cur.fetchone()["vehicle_id"]
 
+        # 6. Lưu vector khuôn mặt (nếu có) vào face_embeddings
+        for v in faces:
+            vec_text = "[" + ",".join(repr(float(x)) for x in v) + "]"
+            cur.execute("INSERT INTO face_embeddings (user_id, embedding) VALUES (%s, %s::vector);",
+                        (user_id, vec_text))
+
         conn.commit()
         return {
             "status": "success",
             "message": "Đăng ký giữ xe thành công!",
+            "face_vectors_saved": len(faces),
             "user_id": user_id,
             "card_id": card_id,
             "vehicle_id": vehicle_id
