@@ -269,6 +269,18 @@
                                 </div>
                             </div>
 
+                            <h6 class="fw-bold text-info mb-3">3. Vector khuôn mặt (tối đa 5 vector, mỗi vector 512 số)</h6>
+                            <div class="mb-4">
+                                <div class="mb-2">
+                                    <input type="file" class="form-control" id="reg-face-files" accept=".json,.txt,application/json" multiple onchange="addVectorsFromFiles(this)">
+                                    <small class="text-muted">Chọn file .json/.txt chứa vector do tool xuất ra.</small>
+                                </div>
+                                <textarea class="form-control" id="reg-face-text" rows="2" placeholder="Hoặc dán vector vào đây, ví dụ [0.01, -0.23, ...] (512 số)"></textarea>
+                                <button type="button" class="btn btn-outline-primary btn-sm mt-2" onclick="addVectorsFromText()">+ Thêm vector đã dán</button>
+                                <div id="face-preview-list" class="d-flex flex-wrap gap-2 mt-2"></div>
+                                <small id="face-count" class="text-muted">Đã có 0/5 vector khuôn mặt</small>
+                            </div>
+
                             <button type="submit" class="btn btn-primary px-4 py-2" id="btn-submit-reg">
                                 ✓ Hoàn tất đăng ký giữ xe
                             </button>
@@ -359,6 +371,7 @@
             }
             return res;
         }
+
 
         function showTab(tab) {
             document.querySelectorAll(".sidebar .nav-link").forEach(el => el.classList.remove("active"));
@@ -472,19 +485,107 @@
             }
         }
 
+        // ===== Vector khuôn mặt (do tool bên ngoài tạo, trang web chỉ nhận và gửi lên server) =====
+        const MAX_FACES = 5;
+        const FACE_DIM  = 512;
+        let faceVectors = [];   // mỗi phần tử là mảng 512 số
+
+        // Chấp nhận: [..512 số..] | [[..],[..]] | {"embedding":[..]} | {"embeddings":[[..],..]} | mỗi dòng một vector
+        function extractVectors(data) {
+            if (Array.isArray(data)) {
+                if (data.length && data.every(x => typeof x === "number")) return [data];
+                return data.flatMap(extractVectors);
+            }
+            if (data && typeof data === "object") {
+                for (const k of ["embeddings", "face_embeddings", "vectors", "embedding", "vector"]) {
+                    if (k in data) return extractVectors(data[k]);
+                }
+            }
+            return [];
+        }
+
+        function parseVectorText(text) {
+            text = (text || "").trim();
+            if (!text) return [];
+            try {
+                return extractVectors(JSON.parse(text));
+            } catch (_) {
+                // không phải JSON: coi mỗi dòng là một vector, các số cách nhau bởi dấu phẩy/khoảng trắng
+                return text.split(/\r?\n/).map(l => l.replace(/[\[\]]/g, "").split(/[\s,;]+/).filter(Boolean).map(Number))
+                           .filter(v => v.length);
+            }
+        }
+
+        function addVectors(vectors, sourceName) {
+            let added = 0;
+            for (const v of vectors) {
+                if (faceVectors.length >= MAX_FACES) {
+                    Swal.fire({ icon: 'warning', title: 'Đủ số lượng', text: `Chỉ được tối đa ${MAX_FACES} vector khuôn mặt!`, confirmButtonColor: '#3b82f6' });
+                    break;
+                }
+                if (v.length !== FACE_DIM || !v.every(Number.isFinite)) {
+                    Swal.fire({ icon: 'error', title: 'Vector không hợp lệ', text: `${sourceName}: vector phải có đúng ${FACE_DIM} số (đang có ${v.length}).`, confirmButtonColor: '#3b82f6' });
+                    break;
+                }
+                faceVectors.push(v);
+                added++;
+            }
+            renderFaceList();
+            return added;
+        }
+
+        function renderFaceList() {
+            document.getElementById("face-preview-list").innerHTML = faceVectors.map((v, i) => `
+                <span class="badge bg-info text-dark d-inline-flex align-items-center gap-2 py-2">
+                    Vector #${i + 1} (${v.length} chiều)
+                    <button type="button" class="btn-close btn-close-sm" style="font-size:.6rem" onclick="removeFace(${i})"></button>
+                </span>`).join('');
+            document.getElementById("face-count").textContent = `Đã có ${faceVectors.length}/${MAX_FACES} vector khuôn mặt`;
+        }
+
+        function removeFace(i) {
+            faceVectors.splice(i, 1);
+            renderFaceList();
+        }
+
+        async function addVectorsFromFiles(input) {
+            const files = Array.from(input.files || []);
+            input.value = "";
+            for (const file of files) {
+                const vectors = parseVectorText(await file.text());
+                if (!vectors.length) {
+                    Swal.fire({ icon: 'error', title: 'Không đọc được vector', text: `${file.name}: không tìm thấy vector nào.`, confirmButtonColor: '#3b82f6' });
+                    continue;
+                }
+                addVectors(vectors, file.name);
+            }
+        }
+
+        function addVectorsFromText() {
+            const box = document.getElementById("reg-face-text");
+            const vectors = parseVectorText(box.value);
+            if (!vectors.length) {
+                Swal.fire({ icon: 'error', title: 'Không đọc được vector', text: 'Hãy dán vector dạng JSON hoặc các số cách nhau bởi dấu phẩy.', confirmButtonColor: '#3b82f6' });
+                return;
+            }
+            if (addVectors(vectors, "Vector đã dán")) box.value = "";
+        }
+
         async function handleRegisterParking(e) {
             e.preventDefault();
+
             const btn = document.getElementById("btn-submit-reg");
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang xử lý...';
 
             const payload = {
-                full_name:    document.getElementById("reg-fullname").value.trim(),
-                apartment:    document.getElementById("reg-apartment").value.trim(),
-                phone:        document.getElementById("reg-phone").value.trim(),
-                uid_rfid:     document.getElementById("reg-uid").value.trim(),
-                plate_number: document.getElementById("reg-plate").value.trim(),
-                vehicle_type: document.getElementById("reg-vehicletype").value
+                full_name:       document.getElementById("reg-fullname").value.trim(),
+                apartment:       document.getElementById("reg-apartment").value.trim(),
+                phone:           document.getElementById("reg-phone").value.trim(),
+                uid_rfid:        document.getElementById("reg-uid").value.trim(),
+                plate_number:    document.getElementById("reg-plate").value.trim(),
+                vehicle_type:    document.getElementById("reg-vehicletype").value,
+                face_embeddings: faceVectors
             };
 
             try {
@@ -496,10 +597,13 @@
                 const data = await res.json();
 
                 if (!res.ok) {
-                    Swal.fire({ icon: 'error', title: 'Đăng ký thất bại', text: data.detail || 'Không thể đăng ký!', confirmButtonColor: '#3b82f6' });
+                    const detail = Array.isArray(data.detail) ? data.detail.map(d => d.msg).join('; ') : data.detail;
+                    Swal.fire({ icon: 'error', title: 'Đăng ký thất bại', text: detail || 'Không thể đăng ký!', confirmButtonColor: '#3b82f6' });
                 } else {
                     Swal.fire({ icon: 'success', title: 'Thành công!', text: 'Đăng ký giữ xe thành công!', showConfirmButton: false, timer: 1500 });
                     document.getElementById("form-register-parking").reset();
+                    faceVectors = [];
+                    renderFaceList();
                     setTimeout(() => showTab('residents'), 1500);
                 }
             } catch (err) {
