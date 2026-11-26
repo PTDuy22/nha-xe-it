@@ -340,6 +340,26 @@
     <script>
         const API_BASE = "/api";
 
+        // Gửi kèm ADMIN KEY cho mọi request (nhập 1 lần, lưu trong sessionStorage)
+        function getAdminKey() {
+            let k = sessionStorage.getItem("ADMIN_KEY");
+            if (!k) {
+                k = prompt("Nhập ADMIN KEY để vào hệ thống:") || "";
+                sessionStorage.setItem("ADMIN_KEY", k);
+            }
+            return k;
+        }
+        async function apiFetch(url, opts = {}) {
+            opts.headers = Object.assign({}, opts.headers, { "X-Admin-Key": getAdminKey() });
+            const res = await fetch(url, opts);
+            if (res.status === 401) {
+                sessionStorage.removeItem("ADMIN_KEY");
+                alert("Sai ADMIN KEY. Trang sẽ tải lại để nhập lại.");
+                location.reload();
+            }
+            return res;
+        }
+
         function showTab(tab) {
             document.querySelectorAll(".sidebar .nav-link").forEach(el => el.classList.remove("active"));
 
@@ -363,7 +383,7 @@
 
         async function loadDashboard() {
             try {
-                const res  = await fetch(`${API_BASE}/dashboard/stats`);
+                const res  = await apiFetch(`${API_BASE}/dashboard/stats`);
                 const data = await res.json();
                 document.getElementById("stat-residents").innerText = data.total_residents;
                 document.getElementById("stat-cards").innerText     = data.active_cards;
@@ -393,7 +413,7 @@
 
         async function loadResidents() {
             try {
-                const res  = await fetch(`${API_BASE}/residents`);
+                const res  = await apiFetch(`${API_BASE}/residents`);
                 const list = await res.json();
                 const tbody = document.getElementById("residents-table-body");
                 if (list.length === 0) {
@@ -427,7 +447,7 @@
 
         async function loadLogs() {
             try {
-                const res  = await fetch(`${API_BASE}/logs`);
+                const res  = await apiFetch(`${API_BASE}/logs`);
                 const logs = await res.json();
                 const tbody = document.getElementById("logs-table-body");
                 if (logs.length === 0) {
@@ -468,7 +488,7 @@
             };
 
             try {
-                const res  = await fetch(`${API_BASE}/register-parking`, {
+                const res  = await apiFetch(`${API_BASE}/register-parking`, {
                     method:  'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body:    JSON.stringify(payload)
@@ -504,7 +524,7 @@
             if (!confirm.isConfirmed) return;
 
             try {
-                const res  = await fetch(`${API_BASE}/residents/${userId}`, { method: 'DELETE' });
+                const res  = await apiFetch(`${API_BASE}/residents/${userId}`, { method: 'DELETE' });
                 const data = await res.json();
                 if (!res.ok) {
                     Swal.fire({ icon: 'error', title: 'Lỗi', text: data.detail || 'Không thể hủy đăng ký!', confirmButtonColor: '#3b82f6' });
